@@ -1,0 +1,21 @@
+body,
+html {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: Arial, sans-serif;
+}
+
+.container {
+  text-align: center;
+}
+
+.logo img {
+  max-width: 200px; /* Set a maximum width for the logo */
+}
+  
+.logo {
+  margin-bottom: 20px;
+}
