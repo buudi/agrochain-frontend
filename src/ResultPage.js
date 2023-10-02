@@ -17,7 +17,7 @@ const ResultPage = () => {
 
   const [accountAddress, setAccountAddress] = useState(null);
   const isConnectedToPeraWallet = !!accountAddress;
-  const [retLocalVar, setRetLocalVar] = useState(null);
+  // const [retLocalVar, setRetLocalVar] = useState(null);
   const [retGlobalVar, setRetGlobalVar] = useState(null);
 
   useEffect(() => {
@@ -37,14 +37,33 @@ const ResultPage = () => {
     })
 
     // Find the product with the given serial number
-    const foundProduct = data.find((item) => item.serial_number === parseInt(term));
+    const foundProduct = fetchProduct(term)
+
     setProduct(foundProduct);
   }, []);
+
+  useEffect(() => {
+
+
+    if (product && retGlobalVar !== null && product !== null) {
+      // Only update foundProduct.seed_storage_grade when both retGlobalVar and product are available
+      const updatedProduct = { ...product };
+      updatedProduct.seed_storage_grade = Number.parseFloat(retGlobalVar);
+      setProduct(updatedProduct);
+      console.log(typeof (updatedProduct.seed_storage_grade));
+    }
+  }, [retGlobalVar, product]);
+
+  const fetchProduct = (term) => {
+    const foundProduct = data.find((item) => item.serial_number === parseInt(term));
+
+    return foundProduct
+  }
 
   const calculateOverallRating = () => {
     if (!product) return null;
 
-    const {
+    let {
       seed_storage_grade,
       crop_growth_grade,
       transportation_emission_grade,
@@ -58,17 +77,23 @@ const ResultPage = () => {
   };
 
   return (
-    <Flex flexDirection="column" alignItems="center" mt="8">
-      <Button className="btn-wallet"
-        onClick={
-          isConnectedToPeraWallet ? handleDisconnectWalletClick : handleConnectWalletClick
-        }>
-        {isConnectedToPeraWallet ? "Disconnect" : "Connect to Pera Wallet"}
-      </Button>
+    <Flex flexDirection="column" alignItems="center" mt="8" marginBottom={"25px"}>
       {product ? (
         <>
+          <Button className="btn-wallet" width="250px" marginTop={"380px"} colorScheme="purple"
+            onClick={
+              isConnectedToPeraWallet ? handleDisconnectWalletClick : handleConnectWalletClick
+            }>
+            {isConnectedToPeraWallet ? "Disconnect from Pera Wallet" : "Connect to Pera Wallet"}
+          </Button>
+          <Button className="btn-wallet" width="250px" m="4" colorScheme="purple"
+            onClick={
+              () => optInToApp()
+            }>
+            Confirm Transaction
+          </Button>
           <Badge variant="solid" colorScheme="blue" p={2} fontSize="lg" mb="2">
-            Overall Rating: {calculateOverallRating}
+            Overall Rating: {calculateOverallRating()}
           </Badge>
           <Skeleton isLoaded={!!product.image_url}>
             <img src={product.image_url} alt={product.product_name} style={{ width: "300px", marginBottom: "20px" }} />
@@ -80,13 +105,14 @@ const ResultPage = () => {
             Serial Number: {serialNumber}
           </Text>
 
+
           <Box w="100%" maxW="500px">
             {["Seed Storage", "Crop Growth", "Transportation Emission", "Processing and Packaging"].map((label) => (
               <Box key={label} mb="4">
                 <Text fontSize="lg" fontWeight="bold" mb="2">{label}</Text>
                 <Flex alignItems="center">
-                  <Progress value={product[`${label.toLowerCase().replace(/ /g, "_")}_grade`] * 10} colorScheme="blue" size="lg" flex="1" />
-                  <Text fontSize="lg" fontWeight="bold">{product[`${label.toLowerCase().replace(/ /g, "_")}_grade`]}</Text>
+                  <Progress value={product[`${label.toLowerCase().replace(/ /g, "_")}_grade`] * 10} colorScheme="blue" size="lg" flex="1" marginRight="10px" />
+                  <Text fontSize="lg" fontWeight="bold">{product[`${label.toLowerCase().replace(/ /g, "_")}_grade`].toFixed(1)}</Text>
                 </Flex>
               </Box>
             ))}
@@ -104,8 +130,9 @@ const ResultPage = () => {
             Go Back
           </Button>
         </>
-      )}
-    </Flex>
+      )
+      }
+    </Flex >
   );
 
   function handleConnectWalletClick() {
@@ -122,19 +149,19 @@ const ResultPage = () => {
     setAccountAddress(null);
   }
 
-  async function checkLocalVarState() {
-    try {
-      const accountInfo = await algod.accountApplicationInformation(accountAddress, appIndex).do();
-      if (!!accountInfo['app-local-state']['key-value'][0].value.uint) {
-        setRetLocalVar(accountInfo['app-local-state']['key-value'][0].value.uint);
-      } else {
-        setRetLocalVar(0);
-      }
-      console.log(accountInfo['app-local-state']['key-value'][0].value.uint);
-    } catch (e) {
-      console.error('There was an error connecting to the algorand node: ', e)
-    }
-  }
+  // async function checkLocalVarState() {
+  //   try {
+  //     const accountInfo = await algod.accountApplicationInformation(accountAddress, appIndex).do();
+  //     if (!!accountInfo['app-local-state']['key-value'][0].value.uint) {
+  //       setRetLocalVar(accountInfo['app-local-state']['key-value'][0].value.uint);
+  //     } else {
+  //       setRetLocalVar(0);
+  //     }
+  //     console.log(accountInfo['app-local-state']['key-value'][0].value.uint);
+  //   } catch (e) {
+  //     console.error('There was an error connecting to the algorand node: ', e)
+  //   }
+  // }
 
   async function optInToApp() {
     const suggestedParams = await algod.getTransactionParams().do();
